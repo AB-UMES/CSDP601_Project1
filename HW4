@@ -1,0 +1,130 @@
+import random
+from sympy import isprime, mod_inverse
+
+
+# Random Prime Generator
+def generate_prime(bits=8):
+    while True:
+        number = random.getrandbits(bits)
+        if isprime(number):
+            return number
+
+
+# Function to calculate two numbers' gcd
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+
+# The totient calculation function (phi(n))
+def compute_totient(p, q):
+    return (p - 1) * (q - 1)
+
+
+# Calculating the modular inverse (d) is an equation
+def mod_inverse_of_e(e, phi):
+    return mod_inverse(e, phi)
+
+
+# Generate public and private keys function
+def generate_keys(name):
+    print(f"\nGenerating keys for {name}...")
+
+    # Step 1: Select p and q, two different prime numbers.
+    p = generate_prime()
+    q = generate_prime()
+    while p == q:
+        q = generate_prime()
+
+    print(f"Step 1: Prime numbers p = {p}, q = {q}")
+
+    # Step 2: Compute that n = p * q
+    n = p * q
+    print(f"Step 2: Calculate n = p * q = {n}")
+
+    # Step 3: Calculate the totient (p - 1) * (q - 1) = φ(n)
+    phi = compute_totient(p, q)
+    print(f"Step 3: Compute Euler's totient φ(n) = {phi}")
+
+    # Step 4: Select an integer e such that gcd(e, φ(n)) = 1 and 1 < e < φ(n)
+    e = random.randint(2, phi - 1)
+    while gcd(e, phi) != 1:
+        e = random.randint(2, phi - 1)
+
+    print(f"Step 4: Choose public exponent e = {e}")
+
+    # Step 5: Determine the private exponent d so that, mod φ(n), d * e ≡ 1
+    d = mod_inverse_of_e(e, phi)
+    print(f"Step 5: Compute private exponent d = {d}")
+
+    # Private key (n, d), public key (n, e)
+    public_key = (n, e)
+    private_key = (n, d)
+
+    return public_key, private_key
+
+
+# Use the public key to encrypt a message
+def encrypt_message(message, public_key):
+    n, e = public_key
+    encrypted_message = []
+    for char in message:
+        m = ord(char)
+        encrypted_char = pow(m, e, n)
+        encrypted_message.append(encrypted_char)
+    return encrypted_message
+
+
+# Use the private key to decrypt a message
+def decrypt_message(encrypted_message, private_key):
+    n, d = private_key
+    decrypted_message = ""
+    for encrypted_char in encrypted_message:
+        m = pow(encrypted_char, d, n)
+        decrypted_message += chr(m)
+    return decrypted_message
+
+
+# Main function
+def main():
+    print("Generating keys for Alice, Mike, and Greg...")
+
+    # Step 1: Create Greg, Mike, and Alice's keys
+    alice_public, alice_private = generate_keys("Alice")
+    mike_public, mike_private = generate_keys("Mike")
+    greg_public, greg_private = generate_keys("Greg")
+
+    # Show the keys
+    print(f"\nAlice's public key: {alice_public}, private key: {alice_private}")
+    print(f"Mike's public key: {mike_public}, private key: {mike_private}")
+    print(f"Greg's public key: {greg_public}, private key: {greg_private}")
+
+    # Step 2: Prompt user for a message
+    message = input("\nEnter a message to send: ")
+
+    # Step 3: Prompt the user for the receiver's name (Alice, Mike, Greg)
+    receiver = input("Enter the receiver's name (Alice, Mike, Greg): ").strip().lower()
+
+    # Encrypt the message for the designated recipient
+    if receiver == "alice":
+        encrypted_message = encrypt_message(message, alice_public)
+        decrypted_message = decrypt_message(encrypted_message, alice_private)
+    elif receiver == "mike":
+        encrypted_message = encrypt_message(message, mike_public)
+        decrypted_message = decrypt_message(encrypted_message, mike_private)
+    elif receiver == "greg":
+        encrypted_message = encrypt_message(message, greg_public)
+        decrypted_message = decrypt_message(encrypted_message, greg_private)
+    else:
+        print("Invalid receiver name.")
+        return
+
+    # Step 4: Show the messages that have been encrypted and retrieved
+    print(f"\nEncrypted message: {encrypted_message}")
+    print(f"Decrypted message: {decrypted_message}")
+
+
+# Run the program
+if __name__ == "__main__":
+    main()
